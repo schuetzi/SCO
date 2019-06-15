@@ -1,9 +1,7 @@
 import string
 import re
 from os import listdir
-from collections import Counter
 from nltk.corpus import stopwords
-
 
 # load doc into memory
 def load_doc(filename):
@@ -11,7 +9,8 @@ def load_doc(filename):
     file = open(filename, 'r')
     # read all text
     text = file.read()
-    # close the file file.close()
+    # close the file
+    file.close()
     return text
 
 # turn a doc into clean tokens
@@ -31,14 +30,12 @@ def clean_doc(doc):
     tokens = [word for word in tokens if len(word) > 1]
     return tokens
 
-# load doc and add to vocab
-def add_doc_to_vocab(filename, vocab):
-    # load doc
-    doc = load_doc(filename)
-    # clean doc
-    tokens = clean_doc(doc)
-    # update counts
-    vocab.update(tokens)
+# save list to file
+def save_list(lines, filename):
+    data = '\n'.join(lines)
+    file = open(filename, 'w')
+    file.write(data)
+    file.close()
 
 # load doc, clean and return line of tokens
 def doc_to_line(filename, vocab):
@@ -59,23 +56,11 @@ def process_docs(directory, vocab):
         if not filename.endswith(".txt"):
             next
         # create the full path of the file to open
-        path = directory + '/' + filename
-        # load and clean the doc
+        path = directory + '/' + filename  # load and clean the doc
         line = doc_to_line(path, vocab)
         # add to list
         lines.append(line)
     return lines
-
-# save list to file
-def save_list(lines, filename):
-    # convert lines to a single blob of text
-    data = '\n'.join(lines)
-    # open file
-    file = open(filename, 'w')
-    # write text
-    file.write(data)
-    # close file
-    file.close()
 
 # load vocabulary
 vocab_filename = 'vocab.txt'
