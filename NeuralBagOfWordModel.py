@@ -8,6 +8,9 @@ from keras.models import Sequential
 from keras.layers import Dense
 
 # load doc into memory
+from pandas import DataFrame
+
+
 def load_doc(filename):
     # open the file as read only
     file = open(filename, 'r')
@@ -62,6 +65,34 @@ def process_docs(directory, vocab, is_train):
         # add to list
         lines.append(line)
     return lines
+
+# evaluate a neural network model
+def evaluate_mode(Xtrain, ytrain, Xtest, ytest):
+    scores = list()
+    n_repeats = 10
+    n_words = Xtest.shape[1]
+    for i in range(n_repeats):
+        # define network
+        model = define_model(n_words)
+        # fit network
+        model.fit(Xtrain, ytrain, epochs=10, verbose=0)
+        # evaluate
+        _, acc = model.evaluate(Xtest, ytest, verbose=0)
+        scores.append(acc)
+        print('%d accuracy: %s' % ((i+1), acc))
+    return scores
+
+# prepare bag of words encoding of docs
+def prepare_data(train_docs, test_docs, mode):
+    # create the tokenizer
+    tokenizer = Tokenizer()
+    # fit the tokenizer on the documents
+    tokenizer.fit_on_texts(train_docs)
+    # encode training data set
+    Xtrain = tokenizer.texts_to_matrix(train_docs, mode=mode)
+    # encode training data set
+    Xtest = tokenizer.texts_to_matrix(test_docs, mode=mode)
+    return Xtrain, Xtest
 
 # load and clean a dataset
 def load_clean_dataset(vocab, is_train):
@@ -118,16 +149,16 @@ vocab = set(vocab.split())
 # load all reviews
 train_docs, ytrain = load_clean_dataset(vocab, True)
 test_docs, ytest = load_clean_dataset(vocab, False)
-# create the tokenizer
-tokenizer = create_tokenizer(train_docs)
-# encode data
-Xtrain = tokenizer.texts_to_matrix(train_docs, mode='freq')
-Xtest = tokenizer.texts_to_matrix(test_docs, mode='freq')
-# define the model
-n_words = Xtest.shape[1]
-model = define_model(n_words)
-# fit network
-model.fit(Xtrain, ytrain, epochs=10, verbose=2)
-# evaluate
-loss, acc = model.evaluate(Xtest, ytest, verbose=0)
-print('Test Accuracy: %f' % (acc*100))
+# run experiment
+modes = ['binary', 'count', 'tfidf', 'freq']
+results = DataFrame()
+for mode in modes:
+    # prepare data for mode
+    Xtrain, Xtest = prepare_data(train_docs, test_docs, mode)
+    # evaluate model on data for mode
+    results[mode] = evaluate_mode(Xtrain, ytrain, Xtest, ytest)
+# summarize results
+print(results.describe())
+# plot results
+results.boxplot()
+pyplot.show()
