@@ -50,7 +50,8 @@ def process_docs(directory, vocab):
     # walk through all files in the folder
     for filename in listdir(directory):
         # create the full path of the file to open
-        path = directory + '/' + filename # load and clean the doc
+        path = directory + '/' + filename
+        # load and clean the doc
         line = doc_to_line(path, vocab)
         # add to list
         lines.append(line)
@@ -90,7 +91,8 @@ def predict_sentiment(review, vocab, tokenizer, model):
     # clean
     tokens = clean_doc(review)
     # filter by vocab
-    tokens = [w for w in tokens if w in vocab] # convert to line
+    tokens = [w for w in tokens if w in vocab]
+    # convert to line
     line = ' '.join(tokens)
     # encode
     encoded = tokenizer.texts_to_matrix([line], mode='binary')
