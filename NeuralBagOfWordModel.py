@@ -44,11 +44,17 @@ def doc_to_line(filename, vocab):
     tokens = [w for w in tokens if w in vocab]
     return ' '.join(tokens)
 
+
 # load all docs in a directory
-def process_docs(directory, vocab):
+def process_docs(directory, vocab, is_train):
     lines = list()
     # walk through all files in the folder
     for filename in listdir(directory):
+        # skip any reviews in the test set
+        if is_train and filename.startswith('cv9'):
+            continue
+        if not is_train and not filename.startswith('cv9'):
+            continue
         # create the full path of the file to open
         path = directory + '/' + filename
         # load and clean the doc
@@ -58,10 +64,10 @@ def process_docs(directory, vocab):
     return lines
 
 # load and clean a dataset
-def load_clean_dataset(vocab):
+def load_clean_dataset(vocab, is_train):
     # load documents
-    neg = process_docs('txt_sentoken/neg', vocab)
-    pos = process_docs('txt_sentoken/pos', vocab)
+    neg = process_docs('txt_sentoken/neg', vocab, is_train)
+    pos = process_docs('txt_sentoken/pos', vocab, is_train)
     docs = neg + pos
     # prepare labels
     labels = [0 for _ in range(len(neg))] + [1 for _ in range(len(pos))]
@@ -110,23 +116,18 @@ vocab_filename = 'vocab.txt'
 vocab = load_doc(vocab_filename)
 vocab = set(vocab.split())
 # load all reviews
-train_docs, ytrain = load_clean_dataset(vocab)
-test_docs, ytest = load_clean_dataset(vocab)
+train_docs, ytrain = load_clean_dataset(vocab, True)
+test_docs, ytest = load_clean_dataset(vocab, False)
 # create the tokenizer
 tokenizer = create_tokenizer(train_docs)
 # encode data
-Xtrain = tokenizer.texts_to_matrix(train_docs, mode='binary')
-Xtest = tokenizer.texts_to_matrix(test_docs, mode='binary')
-# define network
-n_words = Xtrain.shape[1]
+Xtrain = tokenizer.texts_to_matrix(train_docs, mode='freq')
+Xtest = tokenizer.texts_to_matrix(test_docs, mode='freq')
+# define the model
+n_words = Xtest.shape[1]
 model = define_model(n_words)
 # fit network
 model.fit(Xtrain, ytrain, epochs=10, verbose=2)
-# test positive text
-text = 'Best movie ever! It was great, I recommend it.'
-percent, sentiment = predict_sentiment(text, vocab, tokenizer, model)
-print('Review: [%s]\nSentiment: %s (%.3f%%)' % (text, sentiment, percent*100))
-# test negative text
-text = 'This is a bad movie.'
-percent, sentiment = predict_sentiment(text, vocab, tokenizer, model)
-print('Review: [%s]\nSentiment: %s (%.3f%%)' % (text, sentiment, percent*100))
+# evaluate
+loss, acc = model.evaluate(Xtest, ytest, verbose=0)
+print('Test Accuracy: %f' % (acc*100))
