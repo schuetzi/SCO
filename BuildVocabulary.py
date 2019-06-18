@@ -74,5 +74,5 @@ print(len(vocab))
 min_occurane = 2
 tokens = [k for k,c in vocab.items() if c >= min_occurane]
 print(len(tokens))
-# save tokens to a vocabulary file
+# save tokens to a vocabulary file 
 save_list(tokens, 'vocab.txt')
